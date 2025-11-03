@@ -1,0 +1,39 @@
+# ROS2 Workspace build artifacts
+build/
+install/
+log/
+*.pyc
+__pycache__/
+
+# Python
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+*.egg-info/
+dist/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.bak
+*.log
+
+# Gazebo
+.gazebo/
+
+# ROS2
+.colcon_install_layout
+
