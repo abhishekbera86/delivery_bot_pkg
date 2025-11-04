@@ -17,11 +17,11 @@ class LocationHandler:
         
         Args:
             locations_file: Path to JSON file for storing locations
-                          Default: ~/delivery_bot_ws/data/locations.json
+                          Default: ~/delivery_bot_pkg/data/locations.json
         """
         if locations_file is None:
             # Default path in workspace data directory
-            workspace_dir = os.path.expanduser("~/delivery_bot_ws")
+            workspace_dir = os.path.expanduser("~/delivery_bot_pkg")
             data_dir = os.path.join(workspace_dir, "data")
             os.makedirs(data_dir, exist_ok=True)
             locations_file = os.path.join(data_dir, "locations.json")

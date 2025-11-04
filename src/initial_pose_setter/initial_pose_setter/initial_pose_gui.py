@@ -44,7 +44,7 @@ class InitialPoseGUI(Node):
     def load_locations(self):
         """Load locations from JSON file if it exists"""
         import json
-        locations_file = os.path.expanduser("~/delivery_bot_ws/data/locations.json")
+        locations_file = os.path.expanduser("~/delivery_bot_pkg/data/locations.json")
         if os.path.exists(locations_file):
             try:
                 with open(locations_file, 'r') as f:
@@ -273,8 +273,10 @@ class InitialPoseGUI(Node):
         
         self.root.mainloop()
         
-        self.destroy_node()
-        rclpy.shutdown()
+        # Clean shutdown
+        if rclpy.ok():
+            self.destroy_node()
+            rclpy.shutdown()
 
 
 def main(args=None):
@@ -286,7 +288,8 @@ def main(args=None):
     except KeyboardInterrupt:
         pass
     finally:
-        rclpy.shutdown()
+        if rclpy.ok():
+            rclpy.shutdown()
 
 
 if __name__ == '__main__':

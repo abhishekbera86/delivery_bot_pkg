@@ -17,7 +17,7 @@ def generate_launch_description():
     # Launch arguments
     map_arg = DeclareLaunchArgument(
         'map',
-        default_value=os.path.expanduser('~/delivery_bot_ws/data/maps/planetary_office_map.yaml'),
+        default_value=os.path.expanduser('~/delivery_bot_pkg/data/maps/planetary_office_map.yaml'),
         description='Path to map file'
     )
     
