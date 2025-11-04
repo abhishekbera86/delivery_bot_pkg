@@ -76,8 +76,8 @@ class GoalNavigatorNode(Node):
             self.status_pub.publish(status_msg)
             return
         
-        # Convert to PoseStamped
-        pose = self.location_handler.location_to_pose_stamped(location_name)
+        # Convert to PoseStamped (pass self to get current timestamp)
+        pose = self.location_handler.location_to_pose_stamped(location_name, node=self)
         
         if pose is None:
             self.get_logger().error(f'Failed to convert location "{location_name}" to pose')
@@ -96,6 +96,16 @@ class GoalNavigatorNode(Node):
             pose: Target pose
             location_name: Name of the location
         """
+        # Cancel any existing goal first
+        if self.current_goal_handle is not None:
+            self.get_logger().info('Canceling previous goal before sending new one')
+            try:
+                cancel_future = self.current_goal_handle.cancel_goal_async()
+                # Don't wait for cancel to complete, just send the new goal
+            except Exception as e:
+                self.get_logger().warn(f'Error canceling previous goal: {e}')
+            self.current_goal_handle = None
+        
         # Create goal message
         goal_msg = NavigateToPose.Goal()
         goal_msg.pose = pose
@@ -161,16 +171,42 @@ class GoalNavigatorNode(Node):
             future: Future from get_result_async
             location_name: Name of the location
         """
-        result = future.result().result
-        
-        # Check if navigation was successful
-        # Nav2 returns status codes where 4 typically means SUCCEEDED
-        if result is not None:
-            self.get_logger().info(f'Navigation completed for location: {location_name}')
-            status_msg = String(data=f'SUCCESS: Arrived at "{location_name}"')
-            self.status_pub.publish(status_msg)
-        else:
-            self.get_logger().error(f'Navigation failed for location: {location_name}')
+        try:
+            goal_response = future.result()
+            goal_status = goal_response.status
+            result = goal_response.result
+            
+            # Nav2 action status codes (from action_msgs.msg.GoalStatus):
+            # 0 = UNKNOWN, 1 = ACCEPTED, 2 = EXECUTING, 3 = CANCELED, 
+            # 4 = SUCCEEDED, 5 = ABORTED, 6 = CANCELING, 7 = ABORTING
+            self.get_logger().info(f'Navigation result for {location_name}: status={goal_status}')
+            
+            if goal_status == 4:  # SUCCEEDED
+                self.get_logger().info(f'Navigation completed successfully for location: {location_name}')
+                status_msg = String(data=f'SUCCESS: Arrived at "{location_name}"')
+                self.status_pub.publish(status_msg)
+            elif goal_status == 3:  # CANCELED
+                self.get_logger().warn(f'Navigation was canceled for location: {location_name}')
+                status_msg = String(data=f'CANCELED: Navigation canceled for "{location_name}"')
+                self.status_pub.publish(status_msg)
+            elif goal_status == 5:  # ABORTED
+                self.get_logger().error(f'Navigation aborted for location: {location_name}')
+                status_msg = String(data=f'ERROR: Navigation aborted for "{location_name}"')
+                self.status_pub.publish(status_msg)
+            elif goal_status == 6:  # CANCELING
+                self.get_logger().warn(f'Navigation is being canceled for location: {location_name}')
+                status_msg = String(data=f'CANCELED: Navigation canceled for "{location_name}"')
+                self.status_pub.publish(status_msg)
+            elif goal_status == 7:  # ABORTING
+                self.get_logger().error(f'Navigation is being aborted for location: {location_name}')
+                status_msg = String(data=f'ERROR: Navigation aborted for "{location_name}"')
+                self.status_pub.publish(status_msg)
+            else:
+                self.get_logger().warn(f'Navigation ended with status {goal_status} for location: {location_name}')
+                status_msg = String(data=f'ERROR: Navigation failed (status {goal_status}) for "{location_name}"')
+                self.status_pub.publish(status_msg)
+        except Exception as e:
+            self.get_logger().error(f'Error processing navigation result for {location_name}: {e}')
             status_msg = String(data=f'ERROR: Navigation failed for "{location_name}"')
             self.status_pub.publish(status_msg)
         

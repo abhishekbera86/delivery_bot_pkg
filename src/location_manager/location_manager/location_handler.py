@@ -141,13 +141,14 @@ class LocationHandler:
         del self.locations[name]
         return self.save_locations()
     
-    def location_to_pose_stamped(self, name: str, frame_id: str = "map") -> Optional[PoseStamped]:
+    def location_to_pose_stamped(self, name: str, frame_id: str = "map", node=None) -> Optional[PoseStamped]:
         """
         Convert stored location to PoseStamped message
         
         Args:
             name: Location name
             frame_id: Frame ID for the pose (default: "map")
+            node: Optional ROS2 node to get current timestamp (if None, uses Time(0,0))
             
         Returns:
             PoseStamped message or None if location not found
@@ -158,6 +159,15 @@ class LocationHandler:
         
         pose = PoseStamped()
         pose.header.frame_id = frame_id
+        
+        # Set current timestamp if node is provided
+        if node is not None:
+            pose.header.stamp = node.get_clock().now().to_msg()
+        else:
+            # Use zero time if no node provided (for backwards compatibility)
+            from builtin_interfaces.msg import Time
+            pose.header.stamp = Time(sec=0, nanosec=0)
+        
         pose.pose.position.x = location["position"]["x"]
         pose.pose.position.y = location["position"]["y"]
         pose.pose.position.z = location["position"]["z"]

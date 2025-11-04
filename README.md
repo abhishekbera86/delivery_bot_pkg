@@ -36,7 +36,7 @@ ros2 launch initial_pose_setter localization_with_pose_setter.launch.py map:=$HO
 ### 3. Start Nav2 Navigation
 
 ```bash
-ros2 launch turtlebot4_navigation nav2.launch.py
+ros2 launch launch/nav2.launch.py
 ```
 
 ### 4. Start Delivery Navigator
@@ -112,12 +112,14 @@ See `INSTALLATION.md` for complete dependency installation.
 
 ## Documentation
 
-For detailed guides, see the **docs/** directory:
+For detailed guides, see the **[docs/](docs/README.md)** directory:
 
 - **[docs/TIME_SYNCHRONIZATION.md](docs/TIME_SYNCHRONIZATION.md)** - Setting up clock synchronization (CRITICAL)
 - **[docs/MAPPING_GUIDE.md](docs/MAPPING_GUIDE.md)** - Creating SLAM maps
 - **[docs/LOCATION_TAGGING_GUIDE.md](docs/LOCATION_TAGGING_GUIDE.md)** - Tagging delivery locations
 - **[docs/DELIVERY_BOT_GUIDE.md](docs/DELIVERY_BOT_GUIDE.md)** - Using the delivery bot system
+
+See **[docs/README.md](docs/README.md)** for a complete documentation index.
 
 ## Data Storage
 

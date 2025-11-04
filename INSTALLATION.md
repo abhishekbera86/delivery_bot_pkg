@@ -80,6 +80,66 @@ date +%s
 
 Unix timestamps should be within seconds of each other.
 
+### Timezone Configuration
+
+**⚠️ IMPORTANT:** Even with synchronized clocks, **different timezones will cause problems**. **Both systems MUST have the same timezone.**
+
+**Step 1: Check current timezones**
+
+**On NUC:**
+```bash
+cat /etc/timezone
+timedatectl | grep "Time zone"
+```
+
+**On Raspberry Pi:**
+```bash
+cat /etc/timezone
+timedatectl | grep "Time zone"
+```
+
+**Step 2: Set both systems to the same timezone**
+
+You have two options:
+
+**Option A: Set both to UTC (Recommended for ROS2)**
+
+**On both NUC and Raspberry Pi:**
+```bash
+# Set timezone to UTC (recommended for ROS2)
+sudo timedatectl set-timezone UTC
+
+# Verify
+cat /etc/timezone
+timedatectl
+date
+```
+
+**Expected:** Both systems should show UTC in the `date` output and `/etc/timezone` should contain `UTC`.
+
+**Option B: Match NUC's timezone on Raspberry Pi**
+
+If your NUC is set to a local timezone (e.g., `Europe/Luxembourg`), set the Raspberry Pi to match:
+
+**On NUC, check timezone:**
+```bash
+cat /etc/timezone
+# Example output: Europe/Luxembourg
+```
+
+**On Raspberry Pi, set to match NUC:**
+```bash
+# Replace with your NUC's timezone
+sudo timedatectl set-timezone Europe/Luxembourg
+
+# Verify
+cat /etc/timezone
+timedatectl
+date
+```
+
+**Expected:** Both `/etc/timezone` files should contain the same timezone, and both systems should show the same time.
+
 **For detailed instructions and troubleshooting:** See `docs/TIME_SYNCHRONIZATION.md`
 
 ---

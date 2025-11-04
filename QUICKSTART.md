@@ -38,7 +38,7 @@ ros2 launch initial_pose_setter localization_with_pose_setter.launch.py map:=$HO
 ### Step 3: Start Navigation
 
 ```bash
-ros2 launch turtlebot4_navigation nav2.launch.py
+ros2 launch launch/nav2.launch.py
 ```
 
 ### Step 4: Start Delivery Navigator

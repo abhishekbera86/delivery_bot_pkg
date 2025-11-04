@@ -16,7 +16,7 @@ This process uses a **distributed setup** with two computers:
 ## Prerequisites
 
 - ✅ A saved SLAM map (created using `MAPPING_GUIDE.md`)
-- ✅ Tagged delivery locations (see `LOCATION_TAGGING_GUIDE.md` or Step 3 below)
+- ✅ Tagged delivery locations (see `LOCATION_TAGGING_GUIDE.md`)
 - ✅ TurtleBot 4 robot hardware is powered on and ready
 - ✅ TurtleBot 4 Raspberry Pi has ROS2 Jazzy installed
 - ✅ Host computer has ROS2 Jazzy, Nav2, and all delivery bot packages installed
@@ -32,7 +32,7 @@ This process uses a **distributed setup** with two computers:
 
 **📍 On: TurtleBot 4 (Raspberry Pi)**
 
-Open a terminal on the TurtleBot 4 Raspberry Pi and run:
+Open a terminal on the TurtleBot 4 Raspberry Pi and run (if its is not running after the boot):
 
 ```bash
 ros2 launch turtlebot4_bringup robot.launch.py
@@ -108,11 +108,14 @@ Open a new terminal on the host computer:
 ```bash
 cd ~/delivery_bot_ws
 source install/setup.bash
-ros2 launch turtlebot4_navigation nav2.launch.py
+ros2 launch launch/nav2.launch.py
 ```
 
 **What this does:**
-- Starts Nav2 navigation stack
+- Starts Nav2 navigation stack with optimized parameters for:
+  - Smooth spot turning (reduced rotation speed and better thresholds)
+  - Better obstacle avoidance in confined spaces (increased inflation radius)
+  - More precise path planning (A* algorithm enabled)
 - Provides path planning and obstacle avoidance
 - Handles navigation goal requests
 - Provides action server for `navigate_to_pose`
@@ -126,65 +129,7 @@ ros2 launch turtlebot4_navigation nav2.launch.py
 
 ---
 
-### Step 4: Tag Delivery Locations (If Not Already Done)
-
-**📍 On: Host Computer (Intel NUC)**
-
-If you haven't tagged locations yet, follow this step. Otherwise, skip to Step 5.
-
-#### 4a. Start Location Tagger
-
-Open a new terminal:
-
-```bash
-cd ~/delivery_bot_ws
-source install/setup.bash
-ros2 run location_manager location_tag_node
-```
-
-**Keep this terminal open** - Location tagger must be running.
-
-#### 4b. Navigate Robot to a Delivery Location
-
-Use teleoperation to move the robot to a location you want to tag:
-
-```bash
-ros2 run teleop_twist_keyboard teleop_twist_keyboard
-```
-
-Drive the robot to a delivery location (e.g., a desk, office, or specific spot).
-
-#### 4c. Tag the Current Location
-
-Open another terminal:
-
-```bash
-ros2 topic pub /tag_location std_msgs/String "data: 'Office1'"
-```
-
-**Replace `'Office1'` with your desired location name**, for example:
-- `'Office1'`, `'Office2'`, `'Office3'`
-- `'Desk_A'`, `'Desk_B'`, `'Desk_C'`
-- `'Reception'`, `'Kitchen'`, `'Conference_Room'`
-- `'Lab_Station1'`, `'Lab_Station2'`
-
-**Repeat steps 4b-4c** for each location you want to tag.
-
-**Expected output in location_tag_node terminal:**
-```
-[INFO] Tagging location: Office1
-[INFO] Location saved: Office1
-```
-
-Locations are saved to `~/delivery_bot_ws/data/locations.json`
-
-#### 4d. Stop Location Tagging
-
-Press `Ctrl+C` in the location_tag_node terminal when done tagging.
-
----
-
-### Step 5: Start Delivery Navigator
+### Step 4: Start Delivery Navigator
 
 **📍 On: Host Computer (Intel NUC)**
 
@@ -214,7 +159,7 @@ ros2 run delivery_navigator goal_navigator_node
 
 ---
 
-### Step 6: Start Delivery Bot GUI
+### Step 5: Start Delivery Bot GUI
 
 **📍 On: Host Computer (Intel NUC)**
 
@@ -240,7 +185,7 @@ ros2 run delivery_bot_gui delivery_gui
 
 ---
 
-### Step 7: Navigate to a Location
+### Step 6: Navigate to a Location
 
 **📍 On: Host Computer (Intel NUC)**
 
@@ -263,7 +208,7 @@ ros2 run delivery_bot_gui delivery_gui
 
 ---
 
-### Step 8: Navigate to Another Location
+### Step 7: Navigate to Another Location
 
 **📍 On: Host Computer (Intel NUC)**
 
@@ -275,7 +220,7 @@ ros2 run delivery_bot_gui delivery_gui
 
 ---
 
-### Step 9: Stop All Nodes (When Done)
+### Step 8: Stop All Nodes (When Done)
 
 **📍 On: Host Computer (Intel NUC)**
 
@@ -348,6 +293,50 @@ Stop the robot launch:
 - Try sending a different goal to test
 - Restart navigation stack if needed
 
+### Robot Getting Stuck During Spot Turning
+
+**Problem:** Robot gets stuck or hesitates when turning in place to start a new goal.
+
+**Solutions:**
+- Check if robot wheels are blocked or stuck
+- Verify laser scan is working: `ros2 topic echo /scan --once`
+- Check Nav2 controller logs for rotation errors
+- If needed, adjust parameters in `~/delivery_bot_ws/config/nav2.yaml`:
+  - Increase `movement_time_allowance` to 20.0 for more rotation time
+  - Reduce `min_theta_velocity_threshold` to 0.03 if rotation is too sensitive
+
+### Paths Going Through Obstacles
+
+**Problem:** Robot plans paths that go through obstacles (like desks) instead of around them.
+
+**Solutions:**
+- Increase safety distance (`inflation_radius`) in `~/delivery_bot_ws/config/nav2.yaml`:
+  - Current value: `0.6` meters
+  - Increase to `0.7` or `0.8` for larger safety margin
+  - Edit both `local_costmap` and `global_costmap` sections
+- Increase `cost_scaling_factor` to 6.0 for stronger obstacle avoidance
+- Verify obstacles are properly marked in the map
+- Check laser scan is detecting obstacles correctly
+
+### Customizing Nav2 Parameters
+
+**To adjust navigation behavior**, edit the configuration file:
+
+```bash
+nano ~/delivery_bot_ws/config/nav2.yaml
+```
+
+**Common adjustments:**
+- **Safety distance**: Change `inflation_radius` (default: 0.6 meters)
+  - Larger value = robot stays farther from obstacles
+  - Smaller value = robot can navigate closer to obstacles
+- **Rotation speed**: Change `wz_max` in `FollowPath` section (default: 1.2)
+  - Larger value = faster rotation (but may be less smooth)
+  - Smaller value = slower, smoother rotation
+- **Forward speed**: Change `vx_max` in `FollowPath` section (default: 0.5)
+
+After editing, restart Nav2 for changes to take effect.
+
 ---
 
 ## Summary
@@ -356,8 +345,8 @@ Stop the robot launch:
 - ✅ `ros2 launch turtlebot4_bringup robot.launch.py` - Robot hardware
 
 **Host Computer (NUC) runs:**
-- ✅ `ros2 launch turtlebot4_navigation localization.launch.py map:=path/to/map.yaml` - Localization
-- ✅ `ros2 launch turtlebot4_navigation nav2.launch.py` - Navigation stack
+- ✅ `ros2 launch initial_pose_setter localization_with_pose_setter.launch.py map:=path/to/map.yaml` - Localization with Initial Pose GUI
+- ✅ `ros2 launch launch/nav2.launch.py` - Navigation stack
 - ✅ `ros2 run delivery_navigator goal_navigator_node` - Delivery navigator
 - ✅ `ros2 run delivery_bot_gui delivery_gui` - GUI
 
@@ -373,8 +362,8 @@ Stop the robot launch:
 | Step | System | Command |
 |------|--------|---------|
 | 1. Start robot | TurtleBot 4 Pi | `ros2 launch turtlebot4_bringup robot.launch.py` |
-| 2. Load map | Host NUC | `ros2 launch turtlebot4_navigation localization.launch.py map:=~/delivery_bot_ws/data/maps/map_name.yaml` |
-| 3. Start Nav2 | Host NUC | `ros2 launch turtlebot4_navigation nav2.launch.py` |
+| 2. Load map | Host NUC | `ros2 launch initial_pose_setter localization_with_pose_setter.launch.py map:=~/delivery_bot_ws/data/maps/map_name.yaml` |
+| 3. Start Nav2 | Host NUC | `ros2 launch launch/nav2.launch.py` |
 | 4. Start navigator | Host NUC | `ros2 run delivery_navigator goal_navigator_node` |
 | 5. Start GUI | Host NUC | `ros2 run delivery_bot_gui delivery_gui` |
 | 6. Navigate | Host NUC | Select location in GUI and click "Go to Location" |

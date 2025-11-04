@@ -1,6 +1,8 @@
-# Documentation Directory
+# Documentation Index
 
-This directory contains detailed step-by-step guides for using the Delivery Bot project.
+**This is the documentation index for the `docs/` directory.**
+
+This directory contains detailed step-by-step guides for using the Delivery Bot project. For the main project overview, see `../README.md`.
 
 ## Available Guides
 
@@ -40,6 +42,8 @@ This guide covers:
 - Autonomous navigation to locations
 
 **When to use:** Daily operation of the delivery bot system.
+
+---
 
 ---
 
