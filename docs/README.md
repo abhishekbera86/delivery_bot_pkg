@@ -1,94 +1,112 @@
-# Documentation Index
+# Documentation
 
-**This is the documentation index for the `docs/` directory.**
-
-This directory contains detailed step-by-step guides for using the Delivery Bot project. For the main project overview, see `../README.md`.
+This directory contains detailed step-by-step guides for the Delivery Bot project.
 
 ## Available Guides
 
-### 1. [MAPPING_GUIDE.md](MAPPING_GUIDE.md)
-**Complete guide for creating SLAM maps**
+### [MAPPING_AND_LOCATION_TAGGING.md](MAPPING_AND_LOCATION_TAGGING.md)
+**Unified guide for creating SLAM maps and tagging locations**
 
-This guide walks you through:
-- Starting robot hardware on TurtleBot 4 Raspberry Pi
-- Starting SLAM on the host computer
-- Teleoperating the robot to explore and map the environment
-- Saving the map for later use
+Complete guide for:
+- Starting unified mapping and tagging system (single launch command!)
+- Using the unified GUI to configure JSON filename
+- Tagging delivery locations during mapping
+- Saving maps directly from the GUI
+- Exiting cleanly
 
-**When to use:** First time setup, creating a new map for your environment.
+**Key Features:**
+- **Single Launch Command** - Everything starts with one command
+- **Unified GUI** - One interface handles everything
+- **JSON Filename Configuration** - Set custom location file names
+- **Map Saving from GUI** - Save maps directly from the interface
 
----
-
-### 2. [LOCATION_TAGGING_GUIDE.md](LOCATION_TAGGING_GUIDE.md)
-**Guide for tagging delivery locations**
-
-This guide explains:
-- How to tag specific locations in your map
-- How to navigate the robot to each location
-- How to name and save locations
-- Viewing and editing tagged locations
-
-**When to use:** After creating a map, to mark delivery points.
+**When to use:** First time setup, creating a new map and tagging delivery locations.
 
 ---
 
-### 3. [DELIVERY_BOT_GUIDE.md](DELIVERY_BOT_GUIDE.md)
-**Guide for using the delivery bot system**
+### [DELIVERY_BOT_GUIDE.md](DELIVERY_BOT_GUIDE.md)
+**Guide for using the delivery bot system for navigation**
 
-This guide covers:
-- Loading a saved map with localization
-- Starting the navigation stack
-- Using the GUI to select destinations
-- Autonomous navigation to locations
+Complete guide for:
+- Loading saved maps with localization
+- Setting initial pose using tagged locations
+- Starting navigation stack
+- Using the GUI to navigate to destinations
 
-**When to use:** Daily operation of the delivery bot system.
+**When to use:** Daily operation for autonomous navigation.
 
 ---
+
+### [TIME_SYNCHRONIZATION.md](TIME_SYNCHRONIZATION.md)
+**Setting up clock synchronization (CRITICAL)**
+
+Essential guide for:
+- Why clock synchronization is critical
+- Setting up NTP synchronization
+- Verifying synchronization
+- Troubleshooting sync issues
+
+**When to use:** Initial setup, before running any delivery bot operations.
+
+**⚠️ IMPORTANT:** Clock synchronization is critical - without it, navigation will fail.
 
 ---
 
 ## Quick Reference
 
-| Guide | Purpose | Systems Used |
-|-------|---------|--------------|
-| MAPPING_GUIDE | Create SLAM maps | TurtleBot 4 Pi + Host NUC |
-| LOCATION_TAGGING_GUIDE | Tag delivery locations | TurtleBot 4 Pi + Host NUC |
-| DELIVERY_BOT_GUIDE | Use delivery bot | TurtleBot 4 Pi + Host NUC |
-
----
-
-## System Architecture
-
-All guides clearly indicate which commands run on which system:
-
-- **📍 On: TurtleBot 4 (Raspberry Pi)** - Robot hardware and sensors
-- **📍 On: Host Computer (Intel NUC)** - Navigation, SLAM, GUI, and high-level control
+| Guide | Purpose |
+|-------|---------|
+| MAPPING_AND_LOCATION_TAGGING | Create maps and tag locations (unified GUI) |
+| DELIVERY_BOT_GUIDE | Use delivery bot for navigation |
+| TIME_SYNCHRONIZATION | Set up clock sync (critical) |
 
 ---
 
 ## Getting Started
 
 1. **Install dependencies:** See `../INSTALLATION.md`
-2. **Create a map:** Follow `MAPPING_GUIDE.md`
-3. **Tag locations:** Follow `LOCATION_TAGGING_GUIDE.md`
+2. **Set up clock synchronization:** Follow `TIME_SYNCHRONIZATION.md` (CRITICAL!)
+3. **Create map and tag locations:** Follow `MAPPING_AND_LOCATION_TAGGING.md` (single launch command!)
 4. **Use delivery bot:** Follow `DELIVERY_BOT_GUIDE.md`
 
 ---
 
 ## Related Documentation
 
-- **[../README.md](../README.md)** - Project overview and architecture
+- **[../README.md](../README.md)** - Project overview
+- **[../ARCHITECTURE.md](../ARCHITECTURE.md)** - System architecture
+- **[../QUICKSTART.md](../QUICKSTART.md)** - Quick reference
 - **[../INSTALLATION.md](../INSTALLATION.md)** - Installation instructions
-- **[../QUICKSTART.md](../QUICKSTART.md)** - Quick reference guide
-- **[../ARCHITECTURE.md](../ARCHITECTURE.md)** - System architecture details
 
 ---
 
-## Need Help?
+## Workflow Overview
 
-If you encounter issues:
-1. Check the troubleshooting sections in each guide
-2. Verify system architecture requirements
-3. Ensure all prerequisites are met
-4. Check that commands are run on the correct system
+### Workflow 1: Map Creation with Location Tagging (First Time)
 
+**Single unified launch:**
+
+1. Start robot hardware (TurtleBot 4 Pi)
+2. Start unified system: `ros2 launch launch/mapping_with_tagging.launch.py` (Host NUC)
+3. Configure JSON filename in GUI (optional)
+4. Drive robot and tag locations as you map
+5. Save map from GUI when complete
+6. Exit when done
+
+**Result:**
+- Map saved to: `~/delivery_bot_pkg/data/maps/{map_name}.yaml`
+- Locations saved to: `~/delivery_bot_pkg/data/locations/{json_filename}.json`
+
+**See:** `MAPPING_AND_LOCATION_TAGGING.md` for complete guide
+
+### Workflow 2: Delivery Bot Application (Daily Use)
+
+1. Start robot hardware (TurtleBot 4 Pi)
+2. Load saved map with localization (Host NUC)
+3. Set initial pose (use tagged location or manual entry)
+4. Start Nav2 navigation (Host NUC)
+5. Start delivery navigator (Host NUC)
+6. Start delivery GUI (Host NUC)
+7. Select location and navigate!
+
+**See:** `DELIVERY_BOT_GUIDE.md` for complete guide

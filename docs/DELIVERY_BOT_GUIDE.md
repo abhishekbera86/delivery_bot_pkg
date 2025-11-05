@@ -15,8 +15,8 @@ This process uses a **distributed setup** with two computers:
 
 ## Prerequisites
 
-- ✅ A saved SLAM map (created using `MAPPING_GUIDE.md`)
-- ✅ Tagged delivery locations (see `LOCATION_TAGGING_GUIDE.md`)
+- ✅ A saved SLAM map (created using `MAPPING_AND_LOCATION_TAGGING.md`)
+- ✅ Tagged delivery locations (created using `MAPPING_AND_LOCATION_TAGGING.md`)
 - ✅ TurtleBot 4 robot hardware is powered on and ready
 - ✅ TurtleBot 4 Raspberry Pi has ROS2 Jazzy installed
 - ✅ Host computer has ROS2 Jazzy, Nav2, and all delivery bot packages installed
@@ -32,7 +32,7 @@ This process uses a **distributed setup** with two computers:
 
 **📍 On: TurtleBot 4 (Raspberry Pi)**
 
-Open a terminal on the TurtleBot 4 Raspberry Pi and run (if its is not running after the boot):
+Open a terminal on the TurtleBot 4 Raspberry Pi and run (if it's not running after boot):
 
 ```bash
 ros2 launch turtlebot4_bringup robot.launch.py
@@ -53,150 +53,93 @@ ros2 launch turtlebot4_bringup robot.launch.py
 
 ---
 
-### Step 2: Load Saved Map with Localization and Set Initial Pose
+### Step 2: Launch Unified Delivery Bot GUI
 
 **📍 On: Host Computer (Intel NUC)**
 
-Open a new terminal on the host computer and run:
+Open a terminal on the host computer and run:
 
 ```bash
-cd ~/delivery_bot_ws
+cd ~/delivery_bot_pkg
 source install/setup.bash
-ros2 launch initial_pose_setter localization_with_pose_setter.launch.py map:=$HOME/delivery_bot_ws/data/maps/planetary_office_map.yaml
-```
-
-**Replace `planetary_office_map.yaml` with your actual map filename** if different.
-
-**What this does:**
-- Loads the saved map file
-- Starts AMCL (Adaptive Monte Carlo Localization)
-- **Automatically opens Initial Pose GUI** (after 3 seconds)
-- Allows you to easily set initial pose
-
-**The Initial Pose GUI will open automatically.** It provides three options:
-
-1. **Use Tagged Location** (if available):
-   - Select a known location from dropdown
-   - Click "Use This Location"
-   - Initial pose is set from that location's coordinates
-
-2. **Manual Entry**:
-   - Enter X, Y position (meters)
-   - Enter Yaw angle (degrees, 0 = north)
-   - Click "Set Initial Pose (Manual)"
-
-3. **Visual Method (RViz2)**:
-   - Click "Open RViz2 to Set Pose Visually"
-   - In RViz2: Add Map display (topic: `/map`)
-   - Use "2D Pose Estimate" tool to click on map
-
-**After setting initial pose:**
-- AMCL will start localizing
-- Robot transform becomes available
-- You can proceed to navigation
-
-**Keep this terminal open** - Localization must continue running.
-
----
-
-### Step 3: Start Nav2 Navigation Stack
-
-**📍 On: Host Computer (Intel NUC)**
-
-Open a new terminal on the host computer:
-
-```bash
-cd ~/delivery_bot_ws
-source install/setup.bash
-ros2 launch launch/nav2.launch.py
+ros2 launch launch/delivery_bot.launch.py
 ```
 
 **What this does:**
-- Starts Nav2 navigation stack with optimized parameters for:
-  - Smooth spot turning (reduced rotation speed and better thresholds)
-  - Better obstacle avoidance in confined spaces (increased inflation radius)
-  - More precise path planning (A* algorithm enabled)
-- Provides path planning and obstacle avoidance
-- Handles navigation goal requests
-- Provides action server for `navigate_to_pose`
+- Opens the unified Delivery Bot Main GUI
+- GUI handles all node management automatically
+- Provides a single interface for the entire delivery bot workflow
 
 **Expected output:**
-- Nav2 nodes started
-- Navigation stack ready
-- Action server available
-
-**Keep this terminal open** - Nav2 must continue running for navigation to work.
+- GUI window opens with map selection interface
+- Status display showing "Ready - Select a map to begin"
 
 ---
 
-### Step 4: Start Delivery Navigator
-
-**📍 On: Host Computer (Intel NUC)**
-
-Open a new terminal on the host computer:
-
-```bash
-cd ~/delivery_bot_ws
-source install/setup.bash
-ros2 run delivery_navigator goal_navigator_node
-```
-
-**What this does:**
-- Subscribes to `/delivery_goal` topic (receives location names from GUI)
-- Reads location data from `locations.json`
-- Converts location names to poses
-- Sends navigation goals to Nav2
-- Publishes navigation status updates
-
-**Expected output:**
-```
-[INFO] Delivery Navigator Node started
-[INFO] Loaded X locations from locations.json
-[INFO] Waiting for delivery goals...
-```
-
-**Keep this terminal open** - Navigator must be running to handle navigation requests.
-
----
-
-### Step 5: Start Delivery Bot GUI
-
-**📍 On: Host Computer (Intel NUC)**
-
-Open a new terminal on the host computer:
-
-```bash
-cd ~/delivery_bot_ws
-source install/setup.bash
-ros2 run delivery_bot_gui delivery_gui
-```
-
-**What this does:**
-- Opens a graphical interface
-- Shows list of available delivery locations
-- Allows you to select a location
-- Sends navigation goal when "Go to Location" is clicked
-- Displays navigation status
-
-**Expected output:**
-- GUI window opens
-- Location dropdown populated with tagged locations
-- Status display showing "Ready"
-
----
-
-### Step 6: Navigate to a Location
+### Step 3: Select Map and Load
 
 **📍 On: Host Computer (Intel NUC)**
 
 **Using the GUI:**
 
-1. **Select a location** from the dropdown menu
-2. **Click "Go to Location"** button
-3. **Monitor the status** in the GUI:
-   - "Navigating to [Location]..." - Robot is moving
-   - "Arrived at [Location]" - Navigation complete
-   - "Navigation failed" - Error occurred
+1. **Select a map** from the dropdown menu (maps are loaded from `~/delivery_bot_pkg/data/maps/`)
+2. **Click "📂 Load Map and Start Localization"** button
+3. **Wait for confirmation** - The GUI will:
+   - Load the selected map file
+   - Start AMCL localization automatically
+   - Show the "Set Initial Pose" interface
+
+**What happens automatically:**
+- Map file is loaded: `~/delivery_bot_pkg/data/maps/{map_name}.yaml`
+- Locations file is loaded: `~/delivery_bot_pkg/data/locations/{map_name}.json`
+- Localization (AMCL) starts in the background
+- Initial pose card appears in the GUI
+
+**Status display will show:** "✅ Map loaded. Set initial pose to continue."
+
+---
+
+### Step 4: Set Initial Pose
+
+**📍 On: Host Computer (Intel NUC)**
+
+**Using the GUI:**
+
+The "Set Initial Pose" card provides two options:
+
+1. **Use Tagged Location** (Recommended):
+   - Select a known location from the dropdown
+   - Click "✅ Use This Location"
+   - Initial pose is automatically set from that location's coordinates
+
+2. **Manual Entry**:
+   - Enter X, Y position (meters) and Yaw angle (degrees)
+   - Click "✅ Set Manual"
+   - Initial pose is set from your entered values
+
+**After setting initial pose:**
+- The "Set Initial Pose" card will hide
+- The "Select Delivery Location" card will appear
+- Nav2 and Delivery Navigator start automatically in the background
+- Navigation is now ready!
+
+**Status display will show:** "✅ Initial pose set. Navigation ready!"
+
+---
+
+### Step 5: Navigate to a Location
+
+**📍 On: Host Computer (Intel NUC)**
+
+**Using the GUI:**
+
+1. **Select a location** from the dropdown menu (locations are loaded from `{map_name}.json`)
+2. **Click "🚀 Go to Location"** button
+3. **Confirm navigation** in the popup dialog
+4. **Monitor the status** in the GUI:
+   - "🚀 Navigating to: [Location]..." - Robot is moving
+   - "✅ SUCCESS: Arrived at [Location]" - Navigation complete
+   - "❌ ERROR: [message]" - Error occurred
 
 **The robot will:**
 - Plan a path to the selected location
@@ -208,27 +151,30 @@ ros2 run delivery_bot_gui delivery_gui
 
 ---
 
-### Step 7: Navigate to Another Location
+### Step 6: Navigate to Another Location
 
 **📍 On: Host Computer (Intel NUC)**
 
 1. **Select a different location** from the dropdown
-2. **Click "Go to Location"** again
+2. **Click "🚀 Go to Location"** again
 3. The robot will navigate to the new location
 
 **You can navigate to multiple locations** sequentially using the GUI.
 
 ---
 
-### Step 8: Stop All Nodes (When Done)
+### Step 7: Exit (When Done)
 
 **📍 On: Host Computer (Intel NUC)**
 
-Stop all nodes by pressing `Ctrl+C` in each terminal:
-1. GUI (close window or `Ctrl+C`)
-2. Delivery Navigator
-3. Nav2 Navigation
-4. Localization
+**Using the GUI:**
+
+1. **Click "🚪 Exit"** button in the GUI
+2. **Confirm exit** in the popup dialog
+3. All nodes will be stopped automatically:
+   - Localization
+   - Nav2
+   - Delivery Navigator
 
 **📍 On: TurtleBot 4 (Raspberry Pi)**
 
@@ -244,10 +190,10 @@ Stop the robot launch:
 **Problem:** AMCL shows warnings about needing initial pose, or robot position is incorrect.
 
 **Solution:**
-- Use the Initial Pose GUI that opens automatically with the launch file
-- Or manually run: `ros2 run initial_pose_setter initial_pose_gui`
-- Select a known location or enter position manually
-- Verify map file exists: `ls ~/delivery_bot_ws/data/maps/`
+- Use the "Set Initial Pose" interface in the main GUI
+- Select a tagged location from the dropdown (recommended)
+- Or enter pose manually (X, Y, Yaw)
+- Verify map file exists: `ls ~/delivery_bot_pkg/data/maps/`
 - Check that `/map` topic is publishing: `ros2 topic echo /map --once`
 - Verify TF transform after setting pose: `ros2 run tf2_ros tf2_echo map base_link`
 
@@ -267,10 +213,12 @@ Stop the robot launch:
 **Problem:** Location dropdown is empty or locations not listed.
 
 **Solutions:**
-- Verify `locations.json` file exists: `cat ~/delivery_bot_ws/data/locations.json`
-- Click "Refresh Locations" button in GUI
-- Check location_manager was running when locations were tagged
+- Verify locations file exists for the selected map: `ls ~/delivery_bot_pkg/data/locations/{map_name}.json`
+- Make sure the locations file name matches the map name (e.g., `office_map.yaml` → `office_map.json`)
+- Click "🔄 Refresh" button in the location selection card
+- Check that locations were tagged using the mapping GUI for this specific map
 - Verify JSON file has valid format
+- Ensure you selected the correct map in the map selection dropdown
 
 ### Robot Hitting Obstacles
 
@@ -301,7 +249,7 @@ Stop the robot launch:
 - Check if robot wheels are blocked or stuck
 - Verify laser scan is working: `ros2 topic echo /scan --once`
 - Check Nav2 controller logs for rotation errors
-- If needed, adjust parameters in `~/delivery_bot_ws/config/nav2.yaml`:
+- If needed, adjust parameters in `~/delivery_bot_pkg/config/nav2.yaml`:
   - Increase `movement_time_allowance` to 20.0 for more rotation time
   - Reduce `min_theta_velocity_threshold` to 0.03 if rotation is too sensitive
 
@@ -310,7 +258,7 @@ Stop the robot launch:
 **Problem:** Robot plans paths that go through obstacles (like desks) instead of around them.
 
 **Solutions:**
-- Increase safety distance (`inflation_radius`) in `~/delivery_bot_ws/config/nav2.yaml`:
+- Increase safety distance (`inflation_radius`) in `~/delivery_bot_pkg/config/nav2.yaml`:
   - Current value: `0.6` meters
   - Increase to `0.7` or `0.8` for larger safety margin
   - Edit both `local_costmap` and `global_costmap` sections
@@ -323,7 +271,7 @@ Stop the robot launch:
 **To adjust navigation behavior**, edit the configuration file:
 
 ```bash
-nano ~/delivery_bot_ws/config/nav2.yaml
+nano ~/delivery_bot_pkg/config/nav2.yaml
 ```
 
 **Common adjustments:**
@@ -345,14 +293,12 @@ After editing, restart Nav2 for changes to take effect.
 - ✅ `ros2 launch turtlebot4_bringup robot.launch.py` - Robot hardware
 
 **Host Computer (NUC) runs:**
-- ✅ `ros2 launch initial_pose_setter localization_with_pose_setter.launch.py map:=path/to/map.yaml` - Localization with Initial Pose GUI
-- ✅ `ros2 launch launch/nav2.launch.py` - Navigation stack
-- ✅ `ros2 run delivery_navigator goal_navigator_node` - Delivery navigator
-- ✅ `ros2 run delivery_bot_gui delivery_gui` - GUI
+- ✅ `ros2 launch launch/delivery_bot.launch.py` - Unified Delivery Bot GUI (handles all nodes automatically)
 
 **Result:**
 - ✅ Robot navigates autonomously to selected delivery locations
-- ✅ GUI provides easy interface for location selection
+- ✅ Single GUI provides complete workflow from map selection to navigation
+- ✅ All nodes (localization, Nav2, navigator) are managed automatically
 - ✅ System handles path planning and obstacle avoidance
 
 ---
@@ -362,11 +308,10 @@ After editing, restart Nav2 for changes to take effect.
 | Step | System | Command |
 |------|--------|---------|
 | 1. Start robot | TurtleBot 4 Pi | `ros2 launch turtlebot4_bringup robot.launch.py` |
-| 2. Load map | Host NUC | `ros2 launch initial_pose_setter localization_with_pose_setter.launch.py map:=~/delivery_bot_ws/data/maps/map_name.yaml` |
-| 3. Start Nav2 | Host NUC | `ros2 launch launch/nav2.launch.py` |
-| 4. Start navigator | Host NUC | `ros2 run delivery_navigator goal_navigator_node` |
-| 5. Start GUI | Host NUC | `ros2 run delivery_bot_gui delivery_gui` |
-| 6. Navigate | Host NUC | Select location in GUI and click "Go to Location" |
+| 2. Launch GUI | Host NUC | `ros2 launch launch/delivery_bot.launch.py` |
+| 3. Select map | Host NUC | Use GUI to select map from dropdown |
+| 4. Set initial pose | Host NUC | Use GUI to set pose (location or manual) |
+| 5. Navigate | Host NUC | Select location in GUI and click "Go to Location" |
 
 ---
 

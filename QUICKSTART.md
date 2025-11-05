@@ -8,9 +8,42 @@ The Pi doesn't have a battery-backed clock - without sync, navigation will fail 
 
 ---
 
-## Complete Workflow
+## Two Main Workflows
 
-### Step 1: Start Robot Hardware
+### Workflow 1: Map Creation with Location Tagging (First Time)
+
+**Single unified launch - everything in one command!**
+
+```bash
+# On TurtleBot 4 Pi (Terminal 1):
+ros2 launch turtlebot4_bringup robot.launch.py
+
+# On Host Computer (Terminal 1):
+ros2 launch launch/mapping_with_tagging.launch.py
+
+# On Host Computer (Terminal 2 - for teleoperation):
+ros2 run teleop_twist_keyboard teleop_twist_keyboard
+```
+
+**In the Unified GUI:**
+1. Set JSON filename (optional, default: "locations.json") - Click "Set"
+2. Tag locations as you map - Enter name, click "Save Location"
+3. Save map when done - Enter map name, click "Save Map"
+4. Exit - Click "Exit" button
+
+**Result:**
+- Map saved to: `~/delivery_bot_pkg/data/maps/{map_name}.yaml`
+- Locations saved to: `~/delivery_bot_pkg/data/locations/{json_filename}.json`
+
+**See:** `docs/MAPPING_AND_LOCATION_TAGGING.md` for complete guide
+
+---
+
+### Workflow 2: Delivery Bot Application (Daily Use)
+
+**Use saved map and locations for navigation:**
+
+#### Step 1: Start Robot Hardware
 
 **📍 On: TurtleBot 4 (Raspberry Pi)**
 
@@ -18,14 +51,14 @@ The Pi doesn't have a battery-backed clock - without sync, navigation will fail 
 ros2 launch turtlebot4_bringup robot.launch.py
 ```
 
-### Step 2: Load Map and Set Initial Pose
+#### Step 2: Load Map and Set Initial Pose
 
 **📍 On: Host Computer (Intel NUC)**
 
 ```bash
-cd ~/delivery_bot_ws
+cd ~/delivery_bot_pkg
 source install/setup.bash
-ros2 launch initial_pose_setter localization_with_pose_setter.launch.py map:=$HOME/delivery_bot_ws/data/maps/planetary_office_map.yaml
+ros2 launch launch/localization_with_location_tagging.launch.py map:=$HOME/delivery_bot_pkg/data/maps/your_map_name.yaml
 ```
 
 **The Initial Pose GUI opens automatically after 3 seconds.**
@@ -35,19 +68,23 @@ ros2 launch initial_pose_setter localization_with_pose_setter.launch.py map:=$HO
 2. **Manual Entry** - Enter X, Y, Yaw and click "Set Initial Pose (Manual)"
 3. **RViz2** - Click "Open RViz2" and use "2D Pose Estimate" tool
 
-### Step 3: Start Navigation
+**After setting initial pose:**
+- Location Tagging GUI opens automatically
+- You can tag more locations if needed
+
+#### Step 3: Start Navigation
 
 ```bash
 ros2 launch launch/nav2.launch.py
 ```
 
-### Step 4: Start Delivery Navigator
+#### Step 4: Start Delivery Navigator
 
 ```bash
 ros2 run delivery_navigator goal_navigator_node
 ```
 
-### Step 5: Start Delivery GUI
+#### Step 5: Start Delivery GUI
 
 ```bash
 ros2 run delivery_bot_gui delivery_gui
@@ -55,19 +92,24 @@ ros2 run delivery_bot_gui delivery_gui
 
 **Select a location and click "Go to Location"!**
 
+---
+
 ## Key Commands
 
 ```bash
-# Set initial pose manually (if GUI not working)
-ros2 run initial_pose_setter initial_pose_gui
+# Unified mapping and location tagging (first time - ONE COMMAND!)
+ros2 launch launch/mapping_with_tagging.launch.py
 
-# Tag locations
-ros2 run location_manager location_tag_node
-
-# Save map
-ros2 run map_manager map_saver_node
+# Delivery bot application (daily use)
+ros2 launch launch/localization_with_location_tagging.launch.py map:=$HOME/delivery_bot_pkg/data/maps/map_name.yaml
+ros2 launch launch/nav2.launch.py
+ros2 run delivery_navigator goal_navigator_node
+ros2 run delivery_bot_gui delivery_gui
 ```
 
 ## For Complete Guides
 
-See `docs/` directory for detailed step-by-step guides.
+- **Map Creation and Location Tagging:** See `docs/MAPPING_AND_LOCATION_TAGGING.md`
+- **Delivery Bot Navigation:** See `docs/DELIVERY_BOT_GUIDE.md`
+- **Installation:** See `INSTALLATION.md`
+- **Time Synchronization:** See `docs/TIME_SYNCHRONIZATION.md`

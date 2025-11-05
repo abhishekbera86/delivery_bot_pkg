@@ -20,11 +20,13 @@ class LocationHandler:
                           Default: ~/delivery_bot_pkg/data/locations.json
         """
         if locations_file is None:
-            # Default path in workspace data directory
-            workspace_dir = os.path.expanduser("~/delivery_bot_pkg")
+            # Default path in workspace data/locations directory
+            home_dir = os.environ.get('HOME') or os.path.expanduser('~')
+            workspace_dir = os.path.join(home_dir, 'delivery_bot_pkg')
             data_dir = os.path.join(workspace_dir, "data")
-            os.makedirs(data_dir, exist_ok=True)
-            locations_file = os.path.join(data_dir, "locations.json")
+            locations_dir = os.path.join(data_dir, "locations")
+            os.makedirs(locations_dir, exist_ok=True)
+            locations_file = os.path.join(locations_dir, "locations.json")
         
         self.locations_file = locations_file
         self.locations: Dict = {}

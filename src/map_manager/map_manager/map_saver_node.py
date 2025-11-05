@@ -22,7 +22,7 @@ class MapSaverNode(Node):
         super().__init__('map_saver_node')
         
         # Default map directory
-        self.map_dir = os.path.expanduser("~/delivery_bot_pkg/data/maps")
+        self.map_dir = os.environ.get('HOME') + '/delivery_bot_pkg/data/maps'
         os.makedirs(self.map_dir, exist_ok=True)
         
         # Clients for map_saver services (try both SLAM Toolbox and Nav2)
@@ -168,12 +168,12 @@ class MapSaverNode(Node):
                 # 1. Target map directory
                 # 2. Original current directory (where node was started)
                 # 3. Workspace root (~/delivery_bot_pkg/)
-                workspace_root = os.path.expanduser("~/delivery_bot_pkg")
+                workspace_root = os.environ.get('HOME') + '/delivery_bot_pkg'
                 possible_locations = [
                     (self.map_dir, "target map directory"),
                     (original_cwd, "node startup directory"),
                     (workspace_root, "workspace root"),
-                    (os.path.expanduser("~"), "home directory"),
+                    (os.environ.get('HOME'), "home directory"),
                 ]
                 
                 max_wait_time = 15.0  # Wait up to 15 seconds for files

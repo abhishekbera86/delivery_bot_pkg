@@ -20,8 +20,25 @@ class GoalNavigatorNode(Node):
     def __init__(self):
         super().__init__('goal_navigator_node')
         
-        # Initialize location handler
-        self.location_handler = LocationHandler()
+        # Declare parameter for map name
+        self.declare_parameter('map_name', '')
+        map_name = self.get_parameter('map_name').get_parameter_value().string_value
+        
+        # Initialize location handler with map-specific file
+        if map_name:
+            # Use map name to construct locations file path
+            home_dir = os.environ.get('HOME') or os.path.expanduser('~')
+            workspace_dir = os.path.join(home_dir, 'delivery_bot_pkg')
+            data_dir = os.path.join(workspace_dir, "data")
+            locations_dir = os.path.join(data_dir, "locations")
+            os.makedirs(locations_dir, exist_ok=True)
+            locations_file = os.path.join(locations_dir, f"{map_name}.json")
+            self.get_logger().info(f'Using locations file: {locations_file}')
+            self.location_handler = LocationHandler(locations_file=locations_file)
+        else:
+            # Default behavior (backward compatibility)
+            self.location_handler = LocationHandler()
+            self.get_logger().info('Using default locations file')
         
         # Action client for Nav2 navigation
         self.nav_action_client = ActionClient(self, NavigateToPose, 'navigate_to_pose')

@@ -25,6 +25,8 @@ setup(
     entry_points={
         'console_scripts': [
             'location_tag_node = location_manager.location_tag_node:main',
+            'location_tag_gui = location_manager.location_tag_gui:main',
+            'mapping_and_tagging_gui = location_manager.mapping_and_tagging_gui:main',
         ],
     },
 )

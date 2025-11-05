@@ -14,7 +14,7 @@ import os
 
 def generate_launch_description():
     # Get the path to our config file
-    workspace_dir = os.path.expanduser("~/delivery_bot_pkg")
+    workspace_dir = os.environ.get('HOME') + '/delivery_bot_pkg'
     nav2_config = os.path.join(workspace_dir, "config", "nav2.yaml")
     
     # Declare launch argument for params file (default to our config)

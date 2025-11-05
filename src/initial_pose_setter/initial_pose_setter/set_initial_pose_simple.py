@@ -12,7 +12,7 @@ import os
 
 def set_initial_pose_from_location(location_name):
     """Set initial pose from a location in locations.json"""
-    locations_file = os.path.expanduser("~/delivery_bot_pkg/data/locations.json")
+    locations_file = os.environ.get('HOME') + '/delivery_bot_pkg/data/locations.json'
     
     if not os.path.exists(locations_file):
         print(f"ERROR: Locations file not found: {locations_file}")
@@ -75,7 +75,7 @@ def set_initial_pose_from_location(location_name):
 
 def list_locations():
     """List all available locations"""
-    locations_file = os.path.expanduser("~/delivery_bot_pkg/data/locations.json")
+    locations_file = os.environ.get('HOME') + '/delivery_bot_pkg/data/locations.json'
     
     if not os.path.exists(locations_file):
         print(f"ERROR: Locations file not found: {locations_file}")

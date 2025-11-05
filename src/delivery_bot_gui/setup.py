@@ -25,6 +25,7 @@ setup(
     entry_points={
         'console_scripts': [
             'delivery_gui = delivery_bot_gui.delivery_gui:main',
+            'delivery_bot_main_gui = delivery_bot_gui.delivery_bot_main_gui:main',
         ],
     },
 )
