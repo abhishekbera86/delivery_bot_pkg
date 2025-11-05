@@ -41,7 +41,7 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 
 ### Workflow 2: Delivery Bot Application (Daily Use)
 
-**Use saved map and locations for navigation:**
+**Single unified launch - one GUI handles everything!**
 
 #### Step 1: Start Robot Hardware
 
@@ -51,61 +51,57 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 ros2 launch turtlebot4_bringup robot.launch.py
 ```
 
-#### Step 2: Load Map and Set Initial Pose
+#### Step 2: Launch Unified Delivery Bot GUI
 
 **📍 On: Host Computer (Intel NUC)**
 
 ```bash
 cd ~/delivery_bot_pkg
 source install/setup.bash
-ros2 launch launch/localization_with_location_tagging.launch.py map:=$HOME/delivery_bot_pkg/data/maps/your_map_name.yaml
+ros2 launch launch/delivery_bot.launch.py
 ```
 
-**The Initial Pose GUI opens automatically after 3 seconds.**
+**The Unified Delivery Bot GUI opens automatically.**
 
-**In the GUI, choose one method:**
-1. **Use Tagged Location** - Select from dropdown and click "Use This Location"
-2. **Manual Entry** - Enter X, Y, Yaw and click "Set Initial Pose (Manual)"
-3. **RViz2** - Click "Open RViz2" and use "2D Pose Estimate" tool
+**In the GUI:**
 
-**After setting initial pose:**
-- Location Tagging GUI opens automatically
-- You can tag more locations if needed
+1. **Select Map** - Choose a map from the dropdown
+2. **Load Map** - Click "📂 Load Map and Start Localization"
+   - GUI automatically loads the map and starts localization (AMCL)
+   - Shows "Set Initial Pose" interface
+3. **Set Initial Pose** - Choose one method:
+   - **Use Tagged Location** (Recommended): Select from dropdown, click "✅ Use This Location"
+   - **Manual Entry**: Enter X, Y, Yaw, click "✅ Set Manual"
+4. **Navigate** - After initial pose is set:
+   - "Select Delivery Location" card appears
+   - Select location from dropdown (shows only locations for selected map)
+   - Click "🚀 Go to Location"
+   - Monitor navigation status
 
-#### Step 3: Start Navigation
+**The GUI automatically manages:**
+- Map loading
+- Localization (AMCL)
+- Nav2 navigation stack
+- Delivery navigator
+- All nodes are started/stoped automatically
 
-```bash
-ros2 launch launch/nav2.launch.py
-```
-
-#### Step 4: Start Delivery Navigator
-
-```bash
-ros2 run delivery_navigator goal_navigator_node
-```
-
-#### Step 5: Start Delivery GUI
-
-```bash
-ros2 run delivery_bot_gui delivery_gui
-```
-
-**Select a location and click "Go to Location"!**
+**Click "🚪 Exit" when done** - All nodes are stopped automatically.
 
 ---
 
 ## Key Commands
 
 ```bash
-# Unified mapping and location tagging (first time - ONE COMMAND!)
+# Workflow 1: Unified mapping and location tagging (first time - ONE COMMAND!)
 ros2 launch launch/mapping_with_tagging.launch.py
 
-# Delivery bot application (daily use)
-ros2 launch launch/localization_with_location_tagging.launch.py map:=$HOME/delivery_bot_pkg/data/maps/map_name.yaml
-ros2 launch launch/nav2.launch.py
-ros2 run delivery_navigator goal_navigator_node
-ros2 run delivery_bot_gui delivery_gui
+# Workflow 2: Unified delivery bot application (daily use - ONE COMMAND!)
+ros2 launch launch/delivery_bot.launch.py
 ```
+
+**That's it!** Just two commands for the entire workflow:
+1. One command for mapping and tagging
+2. One command for delivery bot navigation
 
 ## For Complete Guides
 

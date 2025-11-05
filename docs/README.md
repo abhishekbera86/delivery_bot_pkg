@@ -9,29 +9,39 @@ This directory contains detailed step-by-step guides for the Delivery Bot projec
 
 Complete guide for:
 - Starting unified mapping and tagging system (single launch command!)
-- Using the unified GUI to configure JSON filename
-- Tagging delivery locations during mapping
+- Using the unified GUI to tag locations during mapping
+- Auto-updating JSON filename when map name is entered
 - Saving maps directly from the GUI
 - Exiting cleanly
 
 **Key Features:**
-- **Single Launch Command** - Everything starts with one command
-- **Unified GUI** - One interface handles everything
-- **JSON Filename Configuration** - Set custom location file names
+- **Single Launch Command** - Everything starts with one command: `ros2 launch launch/mapping_with_tagging.launch.py`
+- **Unified GUI** - One interface handles mapping, location tagging, and map saving
+- **Auto JSON Filename** - When you enter map name, JSON filename automatically matches (e.g., `office_map.yaml` → `office_map.json`)
 - **Map Saving from GUI** - Save maps directly from the interface
+- **Tag During SLAM** - No initial pose needed! Tag locations while mapping
 
 **When to use:** First time setup, creating a new map and tagging delivery locations.
 
 ---
 
 ### [DELIVERY_BOT_GUIDE.md](DELIVERY_BOT_GUIDE.md)
-**Guide for using the delivery bot system for navigation**
+**Guide for using the unified delivery bot GUI for navigation**
 
 Complete guide for:
-- Loading saved maps with localization
-- Setting initial pose using tagged locations
-- Starting navigation stack
-- Using the GUI to navigate to destinations
+- Starting unified delivery bot GUI (single launch command!)
+- Selecting map from dropdown
+- Loading map and starting localization automatically
+- Setting initial pose using tagged locations or manual entry
+- Navigating to destinations
+- Exiting cleanly (all nodes stopped automatically)
+
+**Key Features:**
+- **Single Launch Command** - Everything starts with one command: `ros2 launch launch/delivery_bot.launch.py`
+- **Unified GUI** - One interface handles map selection, localization, initial pose, and navigation
+- **Automatic Node Management** - All nodes (localization, Nav2, navigator) started/stopped automatically
+- **Map-Aware Location Loading** - Shows only locations associated with selected map
+- **Clean Exit** - All nodes stopped cleanly with one button
 
 **When to use:** Daily operation for autonomous navigation.
 
@@ -56,8 +66,8 @@ Essential guide for:
 
 | Guide | Purpose |
 |-------|---------|
-| MAPPING_AND_LOCATION_TAGGING | Create maps and tag locations (unified GUI) |
-| DELIVERY_BOT_GUIDE | Use delivery bot for navigation |
+| MAPPING_AND_LOCATION_TAGGING | Create maps and tag locations (unified GUI - one command!) |
+| DELIVERY_BOT_GUIDE | Use delivery bot for navigation (unified GUI - one command!) |
 | TIME_SYNCHRONIZATION | Set up clock sync (critical) |
 
 ---
@@ -95,18 +105,26 @@ Essential guide for:
 
 **Result:**
 - Map saved to: `~/delivery_bot_pkg/data/maps/{map_name}.yaml`
-- Locations saved to: `~/delivery_bot_pkg/data/locations/{json_filename}.json`
+- Locations saved to: `~/delivery_bot_pkg/data/locations/{map_name}.json` (auto-matched filename)
 
 **See:** `MAPPING_AND_LOCATION_TAGGING.md` for complete guide
 
 ### Workflow 2: Delivery Bot Application (Daily Use)
 
+**Single unified launch - one GUI handles everything!**
+
 1. Start robot hardware (TurtleBot 4 Pi)
-2. Load saved map with localization (Host NUC)
-3. Set initial pose (use tagged location or manual entry)
-4. Start Nav2 navigation (Host NUC)
-5. Start delivery navigator (Host NUC)
-6. Start delivery GUI (Host NUC)
-7. Select location and navigate!
+2. Launch unified delivery bot GUI: `ros2 launch launch/delivery_bot.launch.py` (Host NUC)
+3. Select map from dropdown
+4. Click "Load Map and Start Localization" - GUI automatically:
+   - Loads the selected map
+   - Starts localization (AMCL)
+   - Shows initial pose interface
+5. Set initial pose (use tagged location or manual entry)
+6. Select location and navigate - GUI automatically:
+   - Starts Nav2 navigation stack
+   - Starts delivery navigator
+   - Shows only locations for selected map
+7. Click "Exit" when done - All nodes stopped automatically
 
 **See:** `DELIVERY_BOT_GUIDE.md` for complete guide

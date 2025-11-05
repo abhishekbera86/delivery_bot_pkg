@@ -10,32 +10,51 @@ This is a complete ROS2 Jazzy project for TurtleBot 4 delivery automation, desig
 
 ### Workflow 1: Map Creation with Location Tagging (First Time)
 
-**Single unified launch - everything in one command!**
+**Single unified launch - one GUI handles everything!**
 
 1. Start robot hardware (TurtleBot 4 Pi)
 2. Start unified mapping and tagging system (Host NUC) - **One launch command!**
-3. Configure JSON filename in GUI (optional)
+3. Enter map name in GUI (JSON filename auto-updates to match)
 4. Drive robot and tag locations as you map
-5. Save map from GUI when complete
+5. Save map from GUI when complete (map and locations saved together)
 
-**Key Advantage:** 
+**Key Advantages:** 
 - **Single unified GUI** - One interface handles mapping, location tagging, and map saving
 - **No multiple terminals needed** - Everything starts with one launch command
-- Tag locations during SLAM mapping - no initial pose needed! The `map` frame exists during SLAM, so location tagging works immediately.
+- **Auto JSON filename** - When you enter map name, JSON filename automatically matches
+- **Tag locations during SLAM** - No initial pose needed! The `map` frame exists during SLAM, so location tagging works immediately
+- **Map-aware storage** - Locations automatically saved with map name (e.g., `office_map.yaml` → `office_map.json`)
+
+**Result:**
+- Map saved to: `~/delivery_bot_pkg/data/maps/{map_name}.yaml`
+- Locations saved to: `~/delivery_bot_pkg/data/locations/{map_name}.json`
 
 **See:** `docs/MAPPING_AND_LOCATION_TAGGING.md` for complete guide
 
 ### Workflow 2: Delivery Bot Application (Daily Use)
 
-**Use saved map and locations for navigation:**
+**Single unified launch - one GUI handles everything!**
 
 1. Start robot hardware (TurtleBot 4 Pi)
-2. Load saved map with localization (Host NUC)
-3. Set initial pose (use tagged location or manual entry)
-4. Start Nav2 navigation (Host NUC)
-5. Start delivery navigator (Host NUC)
-6. Start delivery GUI (Host NUC)
-7. Select location and navigate!
+2. Launch unified delivery bot GUI (Host NUC) - **One launch command!**
+3. Select map from dropdown
+4. Click "Load Map and Start Localization" - GUI automatically:
+   - Loads the selected map
+   - Starts localization (AMCL)
+   - Shows initial pose interface
+5. Set initial pose (use tagged location or manual entry)
+6. Select location and navigate - GUI automatically:
+   - Starts Nav2 navigation stack
+   - Starts delivery navigator
+   - Shows only locations for selected map
+7. Click "Exit" when done - All nodes stopped automatically
+
+**Key Advantages:**
+- **Single unified GUI** - One interface handles map selection, localization, initial pose, and navigation
+- **Automatic node management** - All nodes (localization, Nav2, navigator) started/stopped automatically
+- **Map-aware location loading** - Shows only locations associated with selected map
+- **No multiple terminals** - Everything managed through one GUI
+- **Clean exit** - All nodes stopped cleanly with one button
 
 **See:** `docs/DELIVERY_BOT_GUIDE.md` for complete guide
 
@@ -61,9 +80,10 @@ delivery_bot_pkg/
 │   │   │   └── mapping_and_tagging_gui.py  # Unified GUI for mapping and tagging
 │   │   ├── package.xml
 │   │   └── setup.py
-│   ├── delivery_bot_gui/        # GUI for goal selection
+│   ├── delivery_bot_gui/        # GUI for delivery bot workflow
 │   │   ├── delivery_bot_gui/
-│   │   │   └── delivery_gui.py          # Tkinter GUI
+│   │   │   ├── delivery_gui.py          # Original delivery GUI (legacy)
+│   │   │   └── delivery_bot_main_gui.py # Unified Delivery Bot GUI (recommended)
 │   │   ├── package.xml
 │   │   └── setup.py
 │   ├── delivery_navigator/      # Navigation to goals
@@ -79,8 +99,9 @@ delivery_bot_pkg/
 │       └── setup.py
 ├── launch/
 │   ├── mapping_with_tagging.launch.py  # Unified mapping and tagging launch
+│   ├── delivery_bot.launch.py    # Unified delivery bot launch (recommended)
 │   ├── nav2.launch.py            # Nav2 navigation stack
-│   ├── localization_with_location_tagging.launch.py  # Localization + tagging
+│   ├── localization_with_location_tagging.launch.py  # Localization + tagging (legacy)
 │   └── location_tagging_gui.launch.py  # Location tagging GUI (standalone)
 └── data/
     ├── maps/                     # Saved SLAM maps
@@ -122,10 +143,20 @@ delivery_bot_pkg/
 - **See**: `docs/DELIVERY_BOT_GUIDE.md`
 
 ### 4. delivery_bot_gui
-- **Purpose**: Graphical interface for selecting delivery locations
-- **Key File**: `delivery_gui.py`
-- **Dependencies**: tkinter, location_manager
-- **Usage**: `ros2 run delivery_bot_gui delivery_gui`
+- **Purpose**: Complete delivery bot workflow GUI
+- **Key Files**: 
+  - `delivery_bot_main_gui.py` - **Unified Delivery Bot GUI (recommended)**
+  - `delivery_gui.py` - Original delivery GUI (legacy)
+- **Dependencies**: tkinter, location_manager, delivery_navigator
+- **Usage (Unified GUI - Recommended)**: `ros2 launch launch/delivery_bot.launch.py`
+- **Usage (Legacy GUI)**: `ros2 run delivery_bot_gui delivery_gui`
+- **Key Features**:
+  - Map selection from dropdown
+  - Automatic map loading and localization
+  - Initial pose setting (tagged location or manual)
+  - Automatic Nav2 and navigator startup
+  - Map-aware location loading (shows only locations for selected map)
+  - Clean exit (stops all nodes automatically)
 - **See**: `docs/DELIVERY_BOT_GUIDE.md`
 
 ### 5. delivery_navigator
@@ -141,10 +172,12 @@ delivery_bot_pkg/
 - Project structure and workspace setup
 - Map manager package with map saving
 - Location manager with JSON storage (works during SLAM!)
-- **Unified GUI for mapping and tagging** - One interface for everything!
-- GUI for location selection
-- Navigator integration with Nav2
-- Initial pose setter GUI
+- **Unified Mapping & Tagging GUI** - One interface for mapping, tagging, and saving!
+- **Unified Delivery Bot GUI** - One interface for map selection, localization, initial pose, and navigation!
+- Map-aware location management (locations associated with maps)
+- Auto JSON filename matching (matches map name)
+- Navigator integration with Nav2 (auto-started by GUI)
+- Initial pose setter (integrated into delivery bot GUI)
 - Comprehensive documentation
 - Data directory structure
 
@@ -161,25 +194,36 @@ delivery_bot_pkg/
 
 ## Key Features
 
-1. **Unified Mapping and Tagging GUI** - Single GUI handles mapping, location tagging, and map saving!
-2. **Single Launch Command** - Everything starts with one command: `ros2 launch launch/mapping_with_tagging.launch.py`
-3. **JSON Filename Configuration** - Set custom location file names in GUI
-4. **Map Saving from GUI** - Save maps directly from the interface
-5. **Modular Design** - Separate packages for different functionalities
-6. **Persistent Storage** - Locations saved in JSON, maps saved in standard format
-7. **User-Friendly GUI** - Simple interfaces for all operations
-8. **ROS2 Integration** - Proper use of topics, services, and actions
-9. **Extensible** - Easy to add new features
+1. **Two Unified GUIs**:
+   - **Unified Mapping & Tagging GUI** - Single GUI handles mapping, location tagging, and map saving
+   - **Unified Delivery Bot GUI** - Single GUI handles map selection, localization, initial pose, and navigation
+2. **Single Launch Commands**:
+   - Mapping: `ros2 launch launch/mapping_with_tagging.launch.py`
+   - Delivery: `ros2 launch launch/delivery_bot.launch.py`
+3. **Auto JSON Filename** - When you enter map name, JSON filename automatically matches (e.g., `office_map.yaml` → `office_map.json`)
+4. **Map-Aware System** - Locations automatically associated with their corresponding maps
+5. **Automatic Node Management** - All nodes (localization, Nav2, navigator) started/stopped automatically
+6. **Map Saving from GUI** - Save maps directly from the interface
+7. **Modular Design** - Separate packages for different functionalities
+8. **Persistent Storage** - Locations saved in JSON, maps saved in standard format
+9. **User-Friendly GUI** - Simple, professional interfaces for all operations
+10. **ROS2 Integration** - Proper use of topics, services, and actions
+11. **Extensible** - Easy to add new features
 
 ## Important Notes
 
 - All locations are stored in the `map` frame
 - **Location tagging works during SLAM** - The `map` frame exists during mapping, so you can tag locations immediately
-- **Unified GUI** - One interface handles everything: JSON filename, location tagging, map saving
+- **Two Unified GUIs**:
+  - **Mapping & Tagging GUI**: One interface handles JSON filename, location tagging, map saving
+  - **Delivery Bot GUI**: One interface handles map selection, localization, initial pose, navigation
+- **Map-Aware System**: Locations are automatically associated with their corresponding maps (same filename)
+- **Auto JSON Filename**: When you enter map name, JSON filename automatically matches
 - **Data Storage**: Maps saved to `data/maps/`, locations saved to `data/locations/`
+- **Automatic Node Management**: All nodes (localization, Nav2, navigator) managed automatically by GUI
 - When loading a saved map, use tagged locations to set initial pose automatically
 - Robot must be localized (AMCL active) for navigation to work
-- Nav2 must be running for navigation to work
+- Nav2 must be running for navigation to work (auto-started by GUI)
 
 ## Testing Checklist
 
