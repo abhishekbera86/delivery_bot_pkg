@@ -1,33 +1,25 @@
-# Delivery Bot Architecture
+# Mapping and Location Tagging Architecture
 
 ## System Architecture Overview
 
-The delivery bot system consists of five main ROS2 packages that work together to provide mapping, location tagging, and navigation capabilities.
+The mapping and location tagging system consists of three main ROS2 packages that work together to provide SLAM mapping and location tagging capabilities.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                     User Interface Layer                      │
-│                  (delivery_bot_gui)                           │
-│         - GUI for selecting delivery locations                │
-│         - Status monitoring                                   │
+│              (mapping_and_tagging_gui)                        │
+│         - GUI for mapping and location tagging                 │
+│         - Map saving                                           │
 └─────────────────────┬───────────────────────────────────────┘
-                      │ /delivery_goal
-┌─────────────────────▼───────────────────────────────────────┐
-│                   Navigation Layer                            │
-│              (delivery_navigator)                             │
-│         - Receives goal location names                        │
-│         - Converts to poses                                   │
-│         - Sends to Nav2                                       │
-└───────────────┬───────────────────────┬──────────────────────┘
-                │                       │
-                │ location lookup       │ /delivery_goal
+                      │
+                      │ location storage
 ┌───────────────▼───────────────────────┴──────────────────────┐
 │                  Location Management                          │
 │                 (location_manager)                            │
 │         - Tags current robot position                         │
 │         - Stores locations in JSON                            │
 │         - Retrieves location poses                            │
-│         - Works during SLAM or after AMCL initialization     │
+│         - Works during SLAM or after AMCL initialization      │
 └───────────────┬───────────────────────────────────────────────┘
                 │
                 │ TF: map -> base_link
@@ -35,11 +27,11 @@ The delivery bot system consists of five main ROS2 packages that work together t
 │                     Robot Platform                            │
 │                    (TurtleBot 4)                              │
 │         - SLAM / Mapping                                      │
-│         - Localization (AMCL)                                │
+│         - Localization (AMCL)                                 │
 │         - Navigation (Nav2)                                   │
 └───────────────────────────────────────────────────────────────┘
 ┌───────────────────────────────────────────────────────────────┐
-│                    Map Management                              │
+│                    Map Management                             │
 │                   (map_manager)                               │
 │         - Saves SLAM maps                                     │
 │         - Loads maps for navigation                           │
@@ -48,29 +40,21 @@ The delivery bot system consists of five main ROS2 packages that work together t
 │              Initial Pose Setter                              │
 │            (initial_pose_setter)                              │
 │         - GUI for setting initial pose                        │
-│         - Uses tagged locations for automatic setup            │
+│         - Uses tagged locations for automatic setup           │
 └───────────────────────────────────────────────────────────────┘
 ┌───────────────────────────────────────────────────────────────┐
 │         Unified Mapping and Tagging GUI                       │
-│         (location_manager - mapping_and_tagging_gui)           │
+│         (location_manager - mapping_and_tagging_gui)          │
 │         - Single GUI for mapping, tagging, and map saving     │
-│         - JSON filename configuration                          │
-│         - Location tagging during SLAM                         │
-│         - Map saving from GUI                                  │
+│         - JSON filename configuration                         │
+│         - Location tagging during SLAM                        │
+│         - Map saving from GUI                                 │
 └───────────────────────────────────────────────────────────────┘
 ```
 
 ## Package Dependencies
 
 ```
-delivery_bot_gui
-    ├── location_manager (exec_depend)
-    └── delivery_navigator (via topic)
-
-delivery_navigator
-    ├── location_manager (exec_depend)
-    └── nav2_msgs (action client)
-
 location_manager
     ├── tf2_ros (for pose transformation)
     └── geometry_msgs
@@ -104,13 +88,7 @@ User → Location Tagging GUI → Get current pose (TF: map -> base_link)
     → Save to JSON → Update GUI
 ```
 
-### 3. Navigation Flow
-```
-User (GUI) → /delivery_goal → goal_navigator_node 
-    → location_manager (lookup) → Nav2 → Robot Navigation
-```
-
-### 4. Initial Pose Setting Flow
+### 3. Initial Pose Setting Flow
 ```
 User → Initial Pose GUI → Select tagged location OR manual entry
     → Publish to /initialpose → AMCL → Robot localized
@@ -126,8 +104,6 @@ User → Initial Pose GUI → Select tagged location OR manual entry
 | `/map_save_status` | std_msgs/String | map_manager | User | Map save status |
 | `/tag_location` | std_msgs/String | User | location_manager | Tag current position (command-line) |
 | `/location_tag_status` | std_msgs/String | location_manager | User | Tagging status |
-| `/delivery_goal` | std_msgs/String | delivery_bot_gui | delivery_navigator | Goal location name |
-| `/navigation_status` | std_msgs/String | delivery_navigator | delivery_bot_gui | Navigation status |
 | `/initialpose` | geometry_msgs/PoseWithCovarianceStamped | initial_pose_setter | AMCL | Set initial pose |
 | `/initial_pose_set` | std_msgs/Bool | initial_pose_setter | location_manager | Signal that initial pose is set |
 
@@ -137,12 +113,6 @@ User → Initial Pose GUI → Select tagged location OR manual entry
 |---------|------|--------|--------|-------------|
 | `/map_saver/save_map` | nav2_msgs/SaveMap | map_manager | Nav2 | Save SLAM map |
 | `/slam_toolbox/save_map` | slam_toolbox/SaveMap | map_manager | SLAM Toolbox | Save SLAM map |
-
-### Actions
-
-| Action | Type | Client | Server | Description |
-|--------|------|--------|--------|-------------|
-| `/navigate_to_pose` | nav2_msgs/NavigateToPose | delivery_navigator | Nav2 | Navigate to goal |
 
 ## Data Persistence
 
@@ -195,20 +165,17 @@ User → Initial Pose GUI → Select tagged location OR manual entry
 - Locations saved to: `~/delivery_bot_pkg/data/locations/{json_filename}.json`
 - Ready for navigation.
 
-### Workflow 2: Delivery Bot Navigation
+### Workflow 2: Location Tagging After Map is Loaded
 
 1. Start robot hardware (TurtleBot 4 Pi)
 2. Load saved map with AMCL (Host NUC)
 3. Set initial pose using Initial Pose GUI:
    - Select tagged location (recommended)
    - OR manual entry
-   - OR RViz2 visual method
-4. Start Nav2 navigation (Host NUC)
-5. Start delivery navigator (Host NUC)
-6. Start delivery GUI (Host NUC)
-7. Select location and navigate!
+4. Start location tagging GUI (Host NUC)
+5. Tag additional locations as needed
 
-**Result:** Robot navigates to selected location autonomously.
+**Result:** Additional locations tagged and saved to JSON file.
 
 ## Error Handling
 
@@ -216,11 +183,7 @@ User → Initial Pose GUI → Select tagged location OR manual entry
 2. **Location Tagging Failures**: 
    - TF transform errors (no map frame or localization)
    - Status published to `/location_tag_status`
-3. **Navigation Failures**:
-   - Location not found
-   - Nav2 action server unavailable
-   - Status published to `/navigation_status`
-4. **Initial Pose Failures**:
+3. **Initial Pose Failures**:
    - Invalid pose coordinates
    - AMCL not running
    - Error messages displayed in GUI
@@ -229,7 +192,6 @@ User → Initial Pose GUI → Select tagged location OR manual entry
 
 The architecture supports easy extension:
 - New location types can be added to location_manager
-- Additional GUI features can be added to delivery_bot_gui
-- Different navigation strategies can be implemented in delivery_navigator
+- Additional GUI features can be added to mapping_and_tagging_gui
 - Multiple map support can be added to map_manager
 - Additional initial pose methods can be added to initial_pose_setter

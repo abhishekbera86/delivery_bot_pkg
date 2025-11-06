@@ -86,6 +86,8 @@ ros2 launch launch/mapping_with_tagging.launch.py
 - Map saver node connected
 - Mapping and Tagging GUI opens automatically (after 3 seconds)
 
+**⚠️ Important:** You may see "Message Filter dropping message" warnings initially. This is normal during SLAM startup. Wait 30-60 seconds for SLAM to initialize and create the `map` frame. The GUI will show "Waiting for map frame..." until SLAM is ready.
+
 **Keep this terminal open** - All systems must continue running.
 
 ---
@@ -334,6 +336,65 @@ You should see:
 - Verify status shows "Locations will be saved to: {filename}.json"
 - Check that filename ends with `.json` (added automatically)
 - Verify location handler is initialized (check terminal logs)
+
+### SLAM Message Filter Queue Full (Robot Position Not Showing)
+
+**Problem:** Terminal shows repeated messages like:
+```
+[slam_toolbox]: Message Filter dropping message: frame 'rplidar_link' at time ... for reason 'discarding message because the queue is full'
+```
+The GUI shows "Waiting for map frame..." and robot position is not available.
+
+**Root Cause:** SLAM Toolbox is receiving lidar messages faster than it can process them, or transforms aren't available when messages arrive. This prevents SLAM from initializing and creating the `map` frame.
+
+**Solutions:**
+
+1. **Wait for SLAM to Initialize (Most Common Fix):**
+   - This is often a temporary issue during SLAM startup
+   - Wait 30-60 seconds after launching the mapping system
+   - SLAM needs time to process initial scans and create the `map` frame
+   - The messages should stop once SLAM initializes properly
+
+2. **Verify Transform Tree:**
+   ```bash
+   ros2 run tf2_tools view_frames
+   ```
+   - Check that `rplidar_link` → `base_link` → `odom` chain exists
+   - Verify all transforms are being published correctly
+
+3. **Check if Robot is Moving:**
+   - SLAM needs the robot to move slightly to initialize
+   - Try moving the robot forward/backward a small amount
+   - This helps SLAM establish the initial pose
+
+4. **Verify Robot Hardware is Running:**
+   - Ensure `robot.launch.py` is running on the TurtleBot 4 Pi
+   - Check that lidar is publishing: `ros2 topic echo /scan --once`
+   - Verify odometry is working: `ros2 topic echo /odom --once`
+
+5. **Restart Everything:**
+   - Stop all nodes (Ctrl+C in all terminals)
+   - Restart robot hardware on TurtleBot 4 Pi
+   - Wait 5 seconds
+   - Restart mapping system on host computer
+   - Wait 30-60 seconds for SLAM to initialize
+
+6. **Check System Resources:**
+   - High CPU usage can delay SLAM processing
+   - Monitor CPU: `htop` or `top`
+   - Close unnecessary applications if CPU is maxed out
+
+**Expected Behavior:**
+- After 30-60 seconds, the "Message Filter dropping message" warnings should stop
+- The `map` frame should appear: `ros2 run tf2_ros tf2_echo map base_link`
+- GUI should show robot position in green
+- You can now tag locations
+
+**If Problem Persists:**
+- Check SLAM Toolbox logs for other errors
+- Verify network connection between TurtleBot 4 Pi and host computer
+- Ensure both systems have synchronized clocks
+- Try reducing lidar scan rate if possible
 
 ---
 

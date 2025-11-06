@@ -360,15 +360,14 @@ The setup script will:
 
 ### 10.1 Test package visibility
 ```bash
-ros2 pkg list | grep -E "(delivery_bot|map_manager|location_manager|delivery_navigator|delivery_bot_gui)"
+ros2 pkg list | grep -E "(map_manager|location_manager|initial_pose_setter)"
 ```
 
 ### 10.2 Test executables
 ```bash
 ros2 pkg executables map_manager
 ros2 pkg executables location_manager
-ros2 pkg executables delivery_navigator
-ros2 pkg executables delivery_bot_gui
+ros2 pkg executables initial_pose_setter
 ```
 
 ### 10.3 Test GUI dependency

@@ -18,11 +18,57 @@ import time
 class MapSaverNode(Node):
     """ROS2 Node for saving maps from SLAM"""
     
+    @staticmethod
+    def find_workspace_root():
+        """
+        Find the workspace root directory dynamically.
+        Looks for 'install' or 'src' directory by walking up from current file.
+        Falls back to ~/delivery_bot_pkg if not found.
+        
+        Returns:
+            str: Absolute path to workspace root
+        """
+        # Start from current file's directory
+        current_file = os.path.abspath(__file__)
+        current_dir = os.path.dirname(current_file)
+        
+        # Walk up the directory tree looking for workspace markers
+        search_dir = current_dir
+        for _ in range(10):  # Limit search depth
+            # Check for workspace markers (install or src directory)
+            if os.path.exists(os.path.join(search_dir, 'install')) or \
+               os.path.exists(os.path.join(search_dir, 'src')):
+                return search_dir
+            
+            parent = os.path.dirname(search_dir)
+            if parent == search_dir:  # Reached root
+                break
+            search_dir = parent
+        
+        # Fallback: try environment variable or default location
+        workspace_env = os.environ.get('COLCON_PREFIX_PATH', '')
+        if workspace_env:
+            # COLCON_PREFIX_PATH might be a list, take first one
+            workspace_path = workspace_env.split(os.pathsep)[0]
+            # Remove /install suffix if present
+            if workspace_path.endswith('/install'):
+                workspace_path = os.path.dirname(workspace_path)
+            if os.path.exists(workspace_path):
+                return workspace_path
+        
+        # Final fallback: default location
+        home_dir = os.environ.get('HOME') or os.path.expanduser('~')
+        default_workspace = os.path.join(home_dir, 'delivery_bot_pkg')
+        return default_workspace
+    
     def __init__(self):
         super().__init__('map_saver_node')
         
+        # Find workspace root dynamically
+        workspace_root = self.find_workspace_root()
+        
         # Default map directory
-        self.map_dir = os.environ.get('HOME') + '/delivery_bot_pkg/data/maps'
+        self.map_dir = os.path.join(workspace_root, 'data', 'maps')
         os.makedirs(self.map_dir, exist_ok=True)
         
         # Clients for map_saver services (try both SLAM Toolbox and Nav2)
@@ -167,8 +213,8 @@ class MapSaverNode(Node):
                 # Check multiple possible locations where SLAM Toolbox might save files
                 # 1. Target map directory
                 # 2. Original current directory (where node was started)
-                # 3. Workspace root (~/delivery_bot_pkg/)
-                workspace_root = os.environ.get('HOME') + '/delivery_bot_pkg'
+                # 3. Workspace root
+                workspace_root = self.find_workspace_root()
                 possible_locations = [
                     (self.map_dir, "target map directory"),
                     (original_cwd, "node startup directory"),

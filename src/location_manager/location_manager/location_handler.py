@@ -8,6 +8,49 @@ from typing import Dict, List, Optional
 from geometry_msgs.msg import PoseStamped
 
 
+def find_workspace_root():
+    """
+    Find the workspace root directory dynamically.
+    Looks for 'install' or 'src' directory by walking up from current file.
+    Falls back to ~/delivery_bot_pkg if not found.
+    
+    Returns:
+        str: Absolute path to workspace root
+    """
+    # Start from current file's directory
+    current_file = os.path.abspath(__file__)
+    current_dir = os.path.dirname(current_file)
+    
+    # Walk up the directory tree looking for workspace markers
+    search_dir = current_dir
+    for _ in range(10):  # Limit search depth
+        # Check for workspace markers (install or src directory)
+        if os.path.exists(os.path.join(search_dir, 'install')) or \
+           os.path.exists(os.path.join(search_dir, 'src')):
+            return search_dir
+        
+        parent = os.path.dirname(search_dir)
+        if parent == search_dir:  # Reached root
+            break
+        search_dir = parent
+    
+    # Fallback: try environment variable or default location
+    workspace_env = os.environ.get('COLCON_PREFIX_PATH', '')
+    if workspace_env:
+        # COLCON_PREFIX_PATH might be a list, take first one
+        workspace_path = workspace_env.split(os.pathsep)[0]
+        # Remove /install suffix if present
+        if workspace_path.endswith('/install'):
+            workspace_path = os.path.dirname(workspace_path)
+        if os.path.exists(workspace_path):
+            return workspace_path
+    
+    # Final fallback: default location
+    home_dir = os.environ.get('HOME') or os.path.expanduser('~')
+    default_workspace = os.path.join(home_dir, 'delivery_bot_pkg')
+    return default_workspace
+
+
 class LocationHandler:
     """Handles saving and loading delivery locations from JSON files"""
     
@@ -21,8 +64,7 @@ class LocationHandler:
         """
         if locations_file is None:
             # Default path in workspace data/locations directory
-            home_dir = os.environ.get('HOME') or os.path.expanduser('~')
-            workspace_dir = os.path.join(home_dir, 'delivery_bot_pkg')
+            workspace_dir = find_workspace_root()
             data_dir = os.path.join(workspace_dir, "data")
             locations_dir = os.path.join(data_dir, "locations")
             os.makedirs(locations_dir, exist_ok=True)

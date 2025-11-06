@@ -10,7 +10,7 @@ from rclpy.node import Node
 from geometry_msgs.msg import PoseStamped
 from std_msgs.msg import String
 from tf2_ros import Buffer, TransformListener, TransformException
-from location_manager.location_handler import LocationHandler
+from location_manager.location_handler import LocationHandler, find_workspace_root
 import threading
 import time
 import math
@@ -191,7 +191,7 @@ class MappingAndTaggingGUI(Node):
             width=20
         ).pack(side=tk.LEFT, padx=(0, 10))
         
-        self.json_filename_var = tk.StringVar(value="locations.json")
+        self.json_filename_var = tk.StringVar(value="locations")
         json_entry = tk.Entry(
             json_frame,
             textvariable=self.json_filename_var,
@@ -410,12 +410,11 @@ class MappingAndTaggingGUI(Node):
             bd=1,
             highlightthickness=2,
             highlightcolor=self.COLORS['warning'],
-            highlightbackground='#CCCCCC'
+            highlightbackground='#CCCCCC',
+            state='readonly'
         )
         map_name_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
         map_name_entry.bind('<Return>', lambda e: self.save_map())
-        # Auto-update JSON filename when map name changes
-        self.map_name_var.trace_add('write', lambda *args: self.update_json_filename_from_map_name())
         
         save_map_btn = ttk.Button(
             map_name_frame,
@@ -466,35 +465,26 @@ class MappingAndTaggingGUI(Node):
         # Initialize location handler with default filename
         self.set_json_filename()
     
-    def update_json_filename_from_map_name(self):
-        """Auto-update JSON filename when map name changes"""
-        map_name = self.map_name_var.get().strip()
-        if map_name:
-            # Use map name as JSON filename (without extension)
-            # Remove .yaml extension if present
-            if map_name.endswith('.yaml'):
-                map_name = map_name[:-5]
-            # Set JSON filename to match map name
-            json_filename = map_name + '.json'
-            self.json_filename_var.set(json_filename)
-            # Update location handler
-            self.set_json_filename()
-    
     def set_json_filename(self):
         """Set the JSON filename for locations"""
-        json_filename = self.json_filename_var.get().strip()
-        if not json_filename:
-            json_filename = "locations.json"
-            self.json_filename_var.set(json_filename)
+        json_name = self.json_filename_var.get().strip()
+        if not json_name:
+            json_name = "locations"
+            self.json_filename_var.set(json_name)
         
-        # Ensure .json extension
-        if not json_filename.endswith('.json'):
-            json_filename += '.json'
-            self.json_filename_var.set(json_filename)
+        # Remove .json extension if user typed it (we'll add it internally)
+        if json_name.endswith('.json'):
+            json_name = json_name[:-5]
+            self.json_filename_var.set(json_name)
+        
+        # Add .json extension internally for file operations
+        json_filename = json_name + '.json'
+        
+        # Update map name field with the same name
+        self.map_name_var.set(json_name)
         
         # Create full path in data/locations directory
-        home_dir = os.environ.get('HOME') or os.path.expanduser('~')
-        workspace_dir = os.path.join(home_dir, 'delivery_bot_pkg')
+        workspace_dir = find_workspace_root()
         data_dir = os.path.join(workspace_dir, "data")
         locations_dir = os.path.join(data_dir, "locations")
         os.makedirs(locations_dir, exist_ok=True)
@@ -764,7 +754,7 @@ class MappingAndTaggingGUI(Node):
             "Save Map",
             f"Save map as '{map_name}'?\n\n"
             f"This will save the map to:\n"
-            f"~/delivery_bot_pkg/data/maps/{map_name}.yaml"
+            f"{os.path.join(find_workspace_root(), 'data', 'maps', map_name)}.yaml"
         )
         
         if not result:

@@ -19,11 +19,38 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 import os
 
 
+def find_workspace_root():
+    """Find the workspace root directory dynamically."""
+    current_file = os.path.abspath(__file__)
+    current_dir = os.path.dirname(current_file)
+    search_dir = current_dir
+    for _ in range(10):
+        if os.path.exists(os.path.join(search_dir, 'install')) or \
+           os.path.exists(os.path.join(search_dir, 'src')):
+            return search_dir
+        parent = os.path.dirname(search_dir)
+        if parent == search_dir:
+            break
+        search_dir = parent
+    workspace_env = os.environ.get('COLCON_PREFIX_PATH', '')
+    if workspace_env:
+        workspace_path = workspace_env.split(os.pathsep)[0]
+        if workspace_path.endswith('/install'):
+            workspace_path = os.path.dirname(workspace_path)
+        if os.path.exists(workspace_path):
+            return workspace_path
+    home_dir = os.environ.get('HOME') or os.path.expanduser('~')
+    return os.path.join(home_dir, 'delivery_bot_pkg')
+
+
 def generate_launch_description():
     # Launch arguments
+    workspace_root = find_workspace_root()
+    default_map = os.path.join(workspace_root, 'data', 'maps', 'planetary_office_map.yaml')
+    
     map_arg = DeclareLaunchArgument(
         'map',
-        default_value=os.environ.get('HOME') + '/delivery_bot_pkg/data/maps/planetary_office_map.yaml',
+        default_value=default_map,
         description='Path to map file'
     )
     
